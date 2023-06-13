@@ -3,12 +3,13 @@ library(stringr)
 library(moderndive)
 library(skimr)
 library(infer)
+library(Hmisc)
 library(PMCMRplus)
 library(viridis)
 library(ggplot2)
 library(networkD3)
 
-## read data files---------------------------------------------------------------
+## read survey and interview data files---------------------------------------------------------------
 survey <- read.csv("data_files/survey_data.csv")
 interview <- read.csv("data_files/interview_data.csv")
 
@@ -29,40 +30,49 @@ interview <- interview %>%
     GAD_7 >= 10 ~ "Yes",
     TRUE ~ "No"))
 
-## HMS data ---------------------------------------------------------------------
-# HMS_STEMM_grads_2019_2020 <- HMS_2019_2020 %>%
-#   filter(degree_phd==1,
+# Select and create variables from HMS 2019-2020 survey data---------------------------------------------------------------------
+# The full data set is available on request at https://healthymindsnetwork.org/hms/
+# The commented-out code below shows how we extracted the variables from this original data set
+
+# HMS_2019_2020 <- read.csv("data_files/2019-2020 HMS plus inst and vars.csv")
+# 
+# HMS_STEMM_PhD_2019_2020 <- HMS_2019_2020 %>%
+#   filter(degree_phd==1, #select PhD students in STEM fields
 #          field_nat|field_med|field_nur|field_pharm|field_ph|field_eng==1) %>%
-#   select(gender,starts_with("GAD7"), starts_with("phq9"),
+#   select(nrweight, gender,starts_with("GAD7"), starts_with("phq9"), #select non response weight, anxiety, depression, and race variables
 #          race_black, race_ainaan, race_asian, race_his_temp, race_pi,
-#          race_mides, race_white, race_other, finpast) %>%
-#   select(-"phq9_9",-"gad7_impa") %>%
-#   mutate(across(starts_with(c("phq", "GAD")),
+#          race_mides, race_white, race_other) %>%
+#   select(-"phq9_9",-"gad7_impa") %>% #eliminate PHQ question 9 and GAD7 question on impact to make it comparable to our data
+#   mutate(across(starts_with(c("phq", "GAD")), #recode the numbers indicating question responses to make them comparable to our data
 #                 ~recode(.,`1`=0,`2`=1,`3`=2,`4`=3))) %>%
-#   mutate(PHQ_8 = rowSums(across(starts_with("phq")))) %>%
-#   mutate(GAD_7 = rowSums(across(starts_with("GAD")))) %>%
-#   mutate(gender = recode(gender,
-#                          `1` = "Man",
+#   mutate(PHQ_8 = rowSums(across(starts_with("phq")))) %>% #sum of PHQ8 responses
+#   mutate(GAD_7 = rowSums(across(starts_with("GAD")))) %>% #sum of GAD7 responses
+#   mutate(prob_depress = case_when( #create a new variable for probable depression
+#     PHQ_8 >= 10 ~ "Yes",
+#     TRUE ~ "No")) %>%
+#   mutate(prob_anx = case_when( #create a new variable for probable anxiety
+#     GAD_7 >= 10 ~ "Yes",
+#     TRUE ~ "No")) %>%
+#   mutate(gender = recode(gender, #recode the gender using the HMS code book
+#                          `1`="Man",
 #                          `2`="Woman",
 #                          `3`="Trans Man",
 #                          `4`="Trans Woman",
 #                          `5`="Nonbinary/Genderqueer/other",
 #                          `6`="Nonbinary/Genderqueer/other"))%>%
-#   mutate(URG = case_when(
+#   mutate(URG = case_when( #create a new variable for under-represented group membership, per NIH definition
 #     race_ainaan==1 ~ "Yes",
-#     race_his_temp==1 ~ "Yes",
+#     race_his_temp==1 ~ "Yes", 
 #     race_pi==1 ~ "Yes",
 #     race_black==1 ~ "Yes",
 #     race_other==1 ~ "No",
 #     race_mides==1 ~ "No",
 #     race_white==1 ~ "No",
 #     race_asian==1 ~ "No")) %>%
-#   mutate(prob_depress = case_when(
-#     PHQ_8 >= 10 ~ "Yes",
-#     TRUE ~ "No")) %>%
-#   mutate(prob_anx = case_when(
-#     GAD_7 >= 10 ~ "Yes",
-#     TRUE ~ "No"))
+#   select(nrweight, gender, URG, PHQ_8, GAD_7, prob_depress, prob_anx) %>%
+#   write_csv("data_files/HMS_STEMM_PhD_2019_2020.csv")
+
+HMS_STEMM_PhD_2019_2020 <- read.csv("data_files/HMS_STEMM_PhD_2019_2020.csv")
 
 ## Table 1 ----------------------------------------------------------------------
 # create data frame for Table 1
@@ -73,14 +83,14 @@ interview_join <- interview %>%
   filter(Experience == 1) %>%
   select(gender, URG, GAD_7, PHQ_8, GLS, disad_back, prob_anx, prob_depress) %>%
   mutate(source = "interview")
-# HMS_join <- HMS_STEMM_grads_2019_2020 %>%
-#   select(gender, URG, GAD_7, PHQ_8, prob_anx, prob_depress) %>%
-#   mutate(source = "HMS")
+HMS_join <- HMS_STEMM_PhD_2019_2020 %>%
+   select(nrweight, gender, URG, GAD_7, PHQ_8, prob_anx, prob_depress) %>%
+   mutate(source = "HMS")
 
 table_1 <- full_join(survey_join, interview_join)
-# table_1 <- full_join(table_1, HMS_join)
+table_1 <- full_join(table_1, HMS_join)
 
-# generate numbers for Table 1
+# generate numbers for survey, interview, and raw HMS data for Table 1
 table_1 %>%
   group_by(gender, source) %>%
   count()
@@ -97,6 +107,29 @@ table_1 %>%
 table_1 %>%
   group_by(prob_anx, prob_depress, source) %>%
   count()
+
+#generate numbers for weighted HMS data for Table 1
+total_nrweight <- HMS_STEMM_PhD_2019_2020 %>%
+  pull(nrweight) %>%
+  sum()
+HMS_STEMM_PhD_2019_2020 %>%
+  group_by(gender) %>%
+  summarise(sum(nrweight)/total_nrweight)
+HMS_STEMM_PhD_2019_2020 %>%
+  group_by(URG) %>%
+  summarise(sum(nrweight)/total_nrweight)
+HMS_STEMM_PhD_2019_2020 %>%
+  summarise(wtd.mean(GAD_7, nrweight))
+HMS_STEMM_PhD_2019_2020 %>%
+  summarise(sqrt(wtd.var(GAD_7, nrweight)))
+HMS_STEMM_PhD_2019_2020 %>%
+  summarise(wtd.mean(PHQ_8, nrweight))
+HMS_STEMM_PhD_2019_2020 %>%
+  summarise(sqrt(wtd.var(PHQ_8, nrweight)))
+HMS_STEMM_PhD_2019_2020 %>%
+  group_by(prob_anx, prob_depress) %>%
+  summarise(sum(nrweight)/total_nrweight)
+
 
 # test for significant differences between survey and interview populations
 chisq_test(x = filter(table_1, source != "HMS"), 
@@ -122,29 +155,37 @@ chisq_test(x = filter(table_1, source != "HMS"),
 chisq_test(x = filter(table_1, source != "HMS"),
            formula = prob_depress ~ source)
 
-# test for significant differences between survey and HMS populations
-# chisq_test(x = filter(table_1, source != "interview"), 
-#            formula = gender ~ source)
-# chisq_test(x = filter(table_1, source != "interview"), 
-#            formula = URG ~ source)
-# chisq_test(x = filter(table_1, source != "interview"), 
-#            formula = disad_back ~ source)
-# t_test(x = filter(table_1, source != "interview"), 
-#        formula = PHQ_8 ~ source, 
-#        order = c("survey", "HMS"),
-#        alternative = "two-sided")
-# t_test(x = filter(table_1, source != "interview"), 
-#        formula = GAD_7 ~ source, 
-#        order = c("survey", "HMS"),
-#        alternative = "two-sided")
-# t_test(x = filter(table_1, source != "interview"), 
-#        formula = GLS ~ source, 
-#        order = c("survey", "HMS"),
-#        alternative = "two-sided")
-# chisq_test(x = filter(table_1, source != "interview"),
-#            formula = prob_anx ~ source)
-# chisq_test(x = filter(table_1, source != "interview"),
-#            formula = prob_depress ~ source)
+# compare expected proportions from weighted HMS data to observed proportions in survey data
+survey_total_people <- nrow(survey)
+
+survey_total_men <- sum(survey$gender == "Man")
+exp_prop_men <- HMS_STEMM_PhD_2019_2020 %>%
+  filter(gender == "Man") %>%
+  pull(nrweight) %>%
+  sum()/total_nrweight
+prop.test(x = survey_total_men, n = survey_total_people, p = exp_prop_men)
+
+survey_total_URG <- sum(survey$URG =="Yes")
+exp_prop_URG <- HMS_STEMM_PhD_2019_2020 %>%
+  filter(URG == "Yes") %>%
+  pull(nrweight) %>%
+  sum()/total_nrweight
+prop.test(x = survey_total_URG, n = survey_total_people, p = exp_prop_URG)
+
+survey_total_prob_anx <- sum(survey$prob_anx =="Yes")
+exp_prop_anx <- HMS_STEMM_PhD_2019_2020 %>%
+  filter(prob_anx == "Yes") %>%
+  pull(nrweight) %>%
+  sum()/total_nrweight
+prop.test(x = survey_total_prob_anx, n = survey_total_people, p = exp_prop_anx)
+
+survey_total_prob_depress <- sum(survey$prob_depress =="Yes")
+exp_prop_depress <- HMS_STEMM_PhD_2019_2020 %>%
+  filter(prob_depress == "Yes") %>%
+  pull(nrweight) %>%
+  sum()/total_nrweight
+prop.test(x = survey_total_prob_depress, n = survey_total_people, p = exp_prop_depress)
+
 
 ## Figure 1 ---------------------------------------------------------------------
 fig_1 <- survey %>%
