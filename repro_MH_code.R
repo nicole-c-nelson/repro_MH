@@ -5,13 +5,16 @@ library(skimr)
 library(infer)
 library(Hmisc)
 library(PMCMRplus)
-library(viridis)
+library(scico)
 library(ggplot2)
 library(networkD3)
+
+
 
 ## read survey and interview data files---------------------------------------------------------------
 survey <- read.csv("data_files/survey_data.csv")
 interview <- read.csv("data_files/interview_data.csv")
+
 
 # create new variables for probable depression and anxiety
 survey <- survey %>%
@@ -29,6 +32,7 @@ interview <- interview %>%
   mutate(prob_anx = case_when(
     GAD_7 >= 10 ~ "Yes",
     TRUE ~ "No"))
+
 
 # Select and create variables from HMS 2019-2020 survey data---------------------------------------------------------------------
 # The full data set is available on request at https://healthymindsnetwork.org/hms/
@@ -215,8 +219,8 @@ ggplot(fig_1, aes(fill=response, x=question, y=n))+
         legend.text = element_text(size = 11),
         legend.position = "bottom", 
         plot.title.position = "plot")+
-  scale_fill_viridis(discrete = T, direction = -1, 
-                     breaks=c("Several times", "One time", "Not sure", "Never experienced"))+
+  scale_fill_scico_d(direction = -1,
+    breaks=c("Several times", "One time", "Not sure", "Never experienced"))+
   labs(x=NULL, y=NULL, fill = NULL,
        title = "Have you experienced a situation where you were doing an experiment that:")+
   scale_x_discrete(labels = function(x) str_wrap(x, width = 37))+
@@ -296,8 +300,7 @@ fig_2_links_2 <- interview %>%
 
 fig_2_links <- full_join(fig_2_links_1, fig_2_links_2)
 
-color_fig_2 = 'd3.scaleOrdinal() .range(["#440154FF", "#46337EFF", "#365C8DFF",
-"#277F8EFF", "#1FA187FF", "#4AC16DFF", "#9FDA3AFF", "#FDE725FF"])'
+color_fig_2 = 'd3.scaleOrdinal() .range(["#001959", "#114761", "#2B655D", "#627940", "#A48A2C", "#E69858", "#FDB0AA", "#F9CCF9"])'
 
 sankeyNetwork(Links = fig_2_links, Nodes = fig_2_nodes,
               Source = "source", Target = "target",
@@ -315,14 +318,17 @@ fig_3 <- interview %>%
                               "Y" = "Yes",
                               "N" = "No")) %>%
   mutate(emotion_response = recode(Most.prominent.emotional.response,
+                                   "Indifference/lack of surprise" = "Equanimity", 
+                                   "Depressed/demotivated/tired" = "Depression/demotivation",
+                                   "Annoyed/frustrated" = "Annoyance/frustration",
                                    "Panic/anxiety" = "Worry/anxiety/panic",
                                    "Worry about wasting time/resources" =  "Worry/anxiety/panic",
                                    "Self doubt/loss of confindence" = "Self-doubt/loss of confidence"))%>%
   group_by(emotion_response, interfering) %>%
   count() 
 
-emotion_order <- c("Worry/anxiety/panic", "Depressed/demotivated/tired",
-                   "Indifference/lack of surprise", "Annoyed/frustrated",
+emotion_order <- c("Worry/anxiety/panic", "Depression/demotivation",
+                   "Equanimity", "Annoyance/frustration",
                    "Self-doubt/loss of confidence")
 
 ggplot(fig_3)+
@@ -339,8 +345,7 @@ ggplot(fig_3)+
   geom_hline(yintercept = c(5,10), color="lightgrey")+
   labs(x=NULL, y= "Number of students", 
        fill = "Response interfered with daily activities   ")+
-  scale_fill_viridis(discrete = T, direction = -1, 
-                     breaks=c("Yes", "No"))
+  scale_fill_scico_d(direction = -1, breaks=c("Yes", "No"))
 
 ## Figure 4 --------------------------------------------------------------------
 fig_4 <- interview %>%
@@ -362,8 +367,7 @@ ggplot(fig_4, aes(fill=impact, x=outcome, y=n))+
         legend.text = element_text(size = 11),
         legend.position = "bottom", 
         plot.title.position = "plot")+
-  scale_fill_viridis(discrete = T, 
-                     breaks = c("Positive", "Neutral", "Negative"))+
+  scale_fill_scico_d(breaks = c("Positive", "Neutral", "Negative"))+
   labs(x=NULL, y=NULL, fill = "Overall impact  ")+
   scale_x_discrete(labels = function(x) str_wrap(x, width = 37),
                    limits = c("Abandon research question", "Shift research question",
