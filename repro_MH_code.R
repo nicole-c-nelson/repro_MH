@@ -201,7 +201,7 @@ fig_1 <- survey %>%
                            Q2.2 ="Gave you results that were not consistent with what you expected",
                            Q2.3 = "Had a 'right answer' and you did not get that answer",
                            Q2.4 = "You yourself had done before, but got results that 
-                  different from your previous attempts",
+                  differed from your previous attempts",
                            Q2.5 = "Someone else in your lab had done before, but you got results 
                   that differed from theirs",
                            Q2.6 = "Was similar to an experiment you'd seen in the published 
@@ -214,9 +214,8 @@ ggplot(fig_1, aes(fill=response, x=question, y=n))+
   geom_bar(position="fill", stat="identity")+
   coord_flip()+
   theme_minimal()+
+  theme(text = element_text(size = 25))+
   theme(panel.grid.minor = element_blank(),
-        axis.text = element_text(size = 11),
-        legend.text = element_text(size = 11),
         legend.position = "bottom", 
         plot.title.position = "plot")+
   scale_fill_scico_d(direction = -1,
@@ -226,6 +225,7 @@ ggplot(fig_1, aes(fill=response, x=question, y=n))+
   scale_x_discrete(labels = function(x) str_wrap(x, width = 37))+
   scale_y_continuous(labels = scales::percent_format())+
   geom_hline(yintercept = c(.25,.50,.75), color="lightgrey")
+ 
 
 ## Interview characteristics ----------------------------------------------------
 interview %>%
@@ -339,9 +339,8 @@ ggplot(fig_3)+
   scale_y_continuous(breaks = c(0, 5, 10, 15))+
   theme_minimal()+
   theme(panel.grid.minor = element_blank(),
-        axis.text = element_text(size = 11),
-        legend.text = element_text(size = 11),
-        legend.position = "bottom")+
+        legend.position = "bottom",
+        text = element_text(size = 25))+
   geom_hline(yintercept = c(5,10), color="lightgrey")+
   labs(x=NULL, y= "Number of students", 
        fill = "Response interfered with daily activities   ")+
@@ -354,7 +353,9 @@ fig_4 <- interview %>%
                          "1" = "Neutral",
                          "2" = "Positive")) %>%
   mutate(outcome = recode(Eventual.outcome,
-                          "Solved problem" = "Identified problem")) %>%
+                          "Solved problem" = "Identified problem",
+                          "Abandon research question" = "Abandoned research question",
+                          "Shift research question" = "Shifted research question")) %>%
   group_by(outcome, impact) %>%
   count()
 
@@ -363,14 +364,13 @@ ggplot(fig_4, aes(fill=impact, x=outcome, y=n))+
   coord_flip()+
   theme_minimal()+
   theme(panel.grid.minor = element_blank(),
-        axis.text = element_text(size = 11),
-        legend.text = element_text(size = 11),
+        text = element_text(size = 25),
         legend.position = "bottom", 
         plot.title.position = "plot")+
   scale_fill_scico_d(breaks = c("Positive", "Neutral", "Negative"))+
   labs(x=NULL, y=NULL, fill = "Overall impact  ")+
   scale_x_discrete(labels = function(x) str_wrap(x, width = 37),
-                   limits = c("Abandon research question", "Shift research question",
+                   limits = c("Abandoned research question", "Shifted research question",
                               "Identified problem"))+
   scale_y_continuous(labels = scales::percent_format())+
   geom_hline(yintercept = c(.25,.50,.75), color="lightgrey")
@@ -381,8 +381,8 @@ ggplot(fig_4, aes(fill=impact, x=outcome, y=n))+
 outcomes <- interview %>%
   mutate(impact = Overall.impact..0.negative.impact.) %>%
   mutate(outcome = factor(interview$Eventual.outcome,
-                          levels = c("Abandon research question",
-                                     "Shift research question",
+                          levels = c("Abandoned research question",
+                                     "Shifted research question",
                                      "Solved problem"))) %>%
   select(impact, outcome)
 
