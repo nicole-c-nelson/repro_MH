@@ -214,8 +214,8 @@ ggplot(fig_1, aes(fill=response, x=question, y=n))+
   geom_bar(position="fill", stat="identity")+
   coord_flip()+
   theme_minimal()+
-  theme(text = element_text(size = 25))+
   theme(panel.grid.minor = element_blank(),
+        text = element_text(size = 25),
         legend.position = "bottom", 
         plot.title.position = "plot")+
   scale_fill_scico_d(direction = -1,
