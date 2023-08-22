@@ -214,9 +214,8 @@ ggplot(fig_1, aes(fill=response, x=question, y=n))+
   geom_bar(position="fill", stat="identity")+
   coord_flip()+
   theme_minimal()+
+  theme(text = element_text(size = 20))+
   theme(panel.grid.minor = element_blank(),
-        axis.text = element_text(size = 11),
-        legend.text = element_text(size = 11),
         legend.position = "bottom", 
         plot.title.position = "plot")+
   scale_fill_scico_d(direction = -1,
@@ -226,6 +225,7 @@ ggplot(fig_1, aes(fill=response, x=question, y=n))+
   scale_x_discrete(labels = function(x) str_wrap(x, width = 37))+
   scale_y_continuous(labels = scales::percent_format())+
   geom_hline(yintercept = c(.25,.50,.75), color="lightgrey")
+ 
 
 ## Interview characteristics ----------------------------------------------------
 interview %>%
@@ -339,9 +339,8 @@ ggplot(fig_3)+
   scale_y_continuous(breaks = c(0, 5, 10, 15))+
   theme_minimal()+
   theme(panel.grid.minor = element_blank(),
-        axis.text = element_text(size = 11),
-        legend.text = element_text(size = 11),
-        legend.position = "bottom")+
+        legend.position = "bottom",
+        text = element_text(size = 25))+
   geom_hline(yintercept = c(5,10), color="lightgrey")+
   labs(x=NULL, y= "Number of students", 
        fill = "Response interfered with daily activities   ")+
@@ -363,8 +362,7 @@ ggplot(fig_4, aes(fill=impact, x=outcome, y=n))+
   coord_flip()+
   theme_minimal()+
   theme(panel.grid.minor = element_blank(),
-        axis.text = element_text(size = 11),
-        legend.text = element_text(size = 11),
+        text = element_text(size = 25),
         legend.position = "bottom", 
         plot.title.position = "plot")+
   scale_fill_scico_d(breaks = c("Positive", "Neutral", "Negative"))+
